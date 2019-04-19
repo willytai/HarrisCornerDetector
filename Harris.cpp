@@ -22,16 +22,16 @@ void HarrisFeatureDetector::run() {
     this->compute_local_max_R();
 }
 
-void HarrisFeatureDetector::show_images() const {
+void HarrisFeatureDetector::show_images() {
     cv::namedWindow("dx", cv::WINDOW_AUTOSIZE);
     cv::namedWindow("dy", cv::WINDOW_AUTOSIZE);
-    cv::namedWindow("original", cv::WINDOW_AUTOSIZE);
-    cv::namedWindow("color", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("gray", cv::WINDOW_AUTOSIZE);
     cv::imshow("dx", _image_dx);
     cv::imshow("dy", _image_dy);
-    cv::imshow("original", _image_gray);
-    cv::imshow("color", _image_rgb);
+    cv::imshow("gray", _image_gray);
+    std::cout << "\t> press any key to show result" << std::endl;
     cv::waitKey(0);
+    this->show_result();
 }
 
 void HarrisFeatureDetector::compute_derivatives() {
@@ -39,10 +39,27 @@ void HarrisFeatureDetector::compute_derivatives() {
     int guassian_kernel_size = this->create_guassian_kernel_5();
     std::cerr << "\t> bluring image with window = " << guassian_kernel_size << std::endl;
     this->convolution(_image_gray, _image_gray, _guassian_filter, guassian_kernel_size);
-    std::cerr << "\t> computing dx" << std::endl;
-    cv::Sobel(_image_gray, _image_dx, CV_8U, 2, 0, 5);
-    std::cerr << "\t> computing dy" << std::endl;
-    cv::Sobel(_image_gray, _image_dy, CV_8U, 0, 2, 5);
+
+    if (_mode == "opencv") {
+        std::cerr << "\t> computing dx with opencv's cv::Sobel" << std::endl;
+        cv::Sobel(_image_gray, _image_dx, CV_8U, 1, 0, 5);
+        std::cerr << "\t> computing dy with opencv's cv::Sobel" << std::endl;
+        cv::Sobel(_image_gray, _image_dy, CV_8U, 0, 1, 5);
+    }
+    else if (_mode == "custom") {
+        this->init_kernels("sobel");
+        _image_dx.create(_image_gray.rows, _image_gray.cols, CV_8U);
+        _image_dy.create(_image_gray.rows, _image_gray.cols, CV_8U);
+        std::cerr << "\t> computing dx with my Sobel" << std::endl;
+        this->convolution(_image_gray, _image_dx, _kernel_x, _kernel_size);
+        std::cerr << "\t> computing dy with my Sobel" << std::endl;
+        this->convolution(_image_gray, _image_dy, _kernel_y, _kernel_size);
+    }
+    else {
+        std::cout << "\t> invalid mode: " << _mode << std::endl;
+        exit(0);
+    }
+
     delete _guassian_filter;
 }
 
@@ -107,7 +124,7 @@ void HarrisFeatureDetector::compute_local_max_R() {
             }
         }
     }
-    std::cerr << "\t> " << _features << " feature points chosen" << std::endl;
+    std::cerr << "\t> " << _result.size() << " features points chosen" << std::endl;
 }
 
 void HarrisFeatureDetector::dump(std::ostream& os) {
@@ -131,5 +148,6 @@ void HarrisFeatureDetector::show_result() {
     }
     cv::namedWindow("Result", cv::WINDOW_AUTOSIZE);
     cv::imshow("Result", _image_rgb);
+    std::cout << "\t> press any key to exit" << std::endl;
     cv::waitKey(0);
 }

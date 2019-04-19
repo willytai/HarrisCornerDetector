@@ -10,7 +10,7 @@
 class HarrisFeatureDetector
 {
 public:
-    HarrisFeatureDetector(double k, int f) : _k(k), _features(f) {}
+    HarrisFeatureDetector(double k, int f, char* m) { _k = k; _features = f; _mode = m; }
     ~HarrisFeatureDetector() {}
 
     // top API
@@ -26,7 +26,7 @@ public:
     void compute_response();
     void compute_local_max_R();
 
-    void show_images() const;
+    void show_images();
     void init_kernels(std::string);
     int  create_guassian_kernel_3();
     int  create_guassian_kernel_5();
@@ -54,6 +54,8 @@ private:
     double**     _kernel_x;
     double**     _kernel_y;
     double**     _guassian_filter;
+
+    std::string  _mode;
 
     std::vector<std::vector<double> >      _image_dxdy;
     std::vector<std::vector<double> >      _image_dxdx;
